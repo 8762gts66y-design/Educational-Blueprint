@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Connor — A Quick Intro</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #fdf6ec;
+    --card: #ffffff;
+    --ink: #2b2620;
+    --ink-soft: #6b6258;
+    --warm: #e8743b;
+    --warm-light: #fbe4d4;
+    --sage: #7a8b6f;
+    --sage-light: #e8edE3;
+    --sand: #d4b483;
+    --line: #ece2d3;
+    --title: #c9784a;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    height: 100%;
+    overflow-x: hidden;
+    touch-action: pan-y;
+  }
+
+  .wrapper { max-width: 460px; margin: 0 auto; padding: 28px 18px 60px; }
+
+  .deck-header { text-align: center; margin-bottom: 24px; }
+  .deck-header .tag { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--warm); text-transform: uppercase; margin-bottom: 6px; }
+  .deck-header h1 { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 600; color: var(--title); }
+
+  .progress-dots { display: flex; gap: 6px; justify-content: center; margin-bottom: 18px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--line); transition: all 0.3s; }
+  .dot.active { background: var(--warm); width: 20px; border-radius: 4px; }
+
+  .swipe-hint { text-align: center; font-family: 'Space Mono', monospace; font-size: 10px; color: var(--ink-soft); letter-spacing: 1px; margin-bottom: 14px; opacity: 0.7; }
+
+  .card-stack { position: relative; min-height: 480px; touch-action: pan-y; }
+  .pcard {
+    background: var(--card); border-radius: 20px; padding: 30px 26px;
+    box-shadow: 0 12px 40px rgba(43,38,32,0.1);
+    display: none; user-select: none;
+  }
+  .pcard.visible { display: block; }
+  .pcard.swiping { transition: none; }
+  .pcard.settling { transition: transform 0.3s ease, opacity 0.3s ease; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .pcard.visible.fresh { animation: fadeIn 0.35s ease; }
+
+  .pcard .eyebrow { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 10px; }
+  .pcard h2 { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 600; line-height: 1.25; margin-bottom: 16px; color: var(--ink); }
+  .pcard p { font-size: 15px; line-height: 1.7; color: var(--ink-soft); margin-bottom: 12px; }
+  .pcard p:last-child { margin-bottom: 0; }
+  .pcard .accent { color: var(--warm); font-weight: 600; }
+
+  .tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .pill { background: var(--sage-light); color: var(--sage); font-size: 12px; font-weight: 500; padding: 6px 12px; border-radius: 100px; }
+  .pill.warm { background: var(--warm-light); color: var(--warm); }
+  .pill.sand { background: #f5ebd8; color: #a07e3f; }
+
+  .stat-row { display: flex; gap: 14px; margin-top: 14px; flex-wrap: wrap; }
+  .stat { flex: 1; min-width: 90px; background: var(--sage-light); border-radius: 12px; padding: 12px 10px; text-align: center; }
+  .stat .num { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: var(--sage); }
+  .stat .lbl { font-size: 10px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+  .quote-block {
+    border-left: 3px solid var(--warm); padding-left: 14px; margin-top: 16px;
+    font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; color: var(--ink);
+  }
+
+  .nav-row { display: flex; gap: 12px; margin-top: 22px; }
+  .nav-btn {
+    flex: 1; padding: 14px; border-radius: 14px; border: none; font-family: 'Inter', sans-serif;
+    font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.15s;
+  }
+  .nav-btn:active { transform: scale(0.97); }
+  .nav-btn.prev { background: var(--line); color: var(--ink-soft); }
+  .nav-btn.next { background: var(--warm); color: white; }
+
+  .final-card { text-align: center; padding: 10px 4px 4px; }
+  .final-card h2 { font-family: 'Fraunces', serif; font-size: 24px; margin-bottom: 14px; }
+  .choice-row { display: flex; gap: 12px; margin-top: 18px; }
+  .choice-btn {
+    flex: 1; padding: 16px; border-radius: 14px; border: 2px solid var(--line); background: white;
+    font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .choice-btn.yes { border-color: var(--warm); color: var(--warm); }
+  .choice-btn.no { border-color: var(--ink-soft); color: var(--ink-soft); }
+  .choice-note { font-size: 13px; color: var(--ink-soft); margin-top: 16px; line-height: 1.6; }
+  .choice-note strong { color: var(--warm); display: block; margin-bottom: 4px; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div class="deck-header">
+    <div class="tag">A Quick Intro</div>
+    <h1>Hi, I'm Connor 👋</h1>
+  </div>
+
+  <div class="progress-dots" id="dots"></div>
+  <div class="swipe-hint" id="swipe-hint">← swipe →</div>
+
+  <div class="card-stack" id="stack">
+
+    <!-- CARD 1 -->
+    <div class="pcard visible fresh" data-index="0">
+      <div class="eyebrow">The Basics</div>
+      <h2>22, grew up in Pleasant Grove, building a life I actually chose.</h2>
+      <p>I spent a few years in construction before a pretty serious motocross accident rearranged my priorities. Honestly the best worst thing that's ever happened to me.</p>
+      <p>Now I'm <span class="accent">heading into college to become a therapist</span> — specifically for teenagers, because I needed someone like that at that age and didn't have it.</p>
+      <div class="tag-row">
+        <div class="pill warm">Future therapist</div>
+        <div class="pill">Recovering go-go-go-aholic</div>
+        <div class="pill sand">Dog dad</div>
+      </div>
+    </div>
+
+    <!-- CARD 2 -->
+    <div class="pcard" data-index="1">
+      <div class="eyebrow">How I Spend My Time</div>
+      <h2>If I'm not studying, I'm probably doing one of these.</h2>
+      <p>Country swing dancing a few nights a week — it's probably the most "fully myself" I get to be in public, and yeah, I take it seriously.</p>
+      <p>Competitive Rainbow Six Siege, building my own gaming PC piece by piece, messing around with 3D printing, and the occasional round of golf when I want something slower.</p>
+      <div class="stat-row">
+        <div class="stat"><div class="num">10mo</div><div class="lbl">Old golden lab</div></div>
+        <div class="stat"><div class="num">2x</div><div class="lbl">Weekly therapy</div></div>
+        <div class="stat"><div class="num">∞</div><div class="lbl">Dance nights</div></div>
+      </div>
+    </div>
+
+    <!-- CARD 3 -->
+    <div class="pcard" data-index="2">
+      <div class="eyebrow">What I'm Actually Like</div>
+      <h2>Direct, a little intense, working on it in a good way.</h2>
+      <p>I go to therapy and I'm not weird about saying that. I have ADHD, I know it, and I work with it instead of pretending it's not there.</p>
+      <p>I think a lot — probably too much sometimes — and I'd rather have a real conversation than small talk. Ask me something, expect an actual answer back, not a deflection.</p>
+      <div class="quote-block">"I want to feel things deeply instead of numbing out or avoiding them."</div>
+    </div>
+
+    <!-- CARD 4 -->
+    <div class="pcard" data-index="3">
+      <div class="eyebrow">Where I'm Headed</div>
+      <h2>I know exactly where this is going.</h2>
+      <p>GED's done, I got into college, and I'm studying Psychology with a real plan toward becoming a licensed mental health counselor for teens. Not a vague someday — an actual plan I'm already executing on.</p>
+      <p>I'm not looking for someone to fix or be fixed by. I'm looking for someone building their own thing who wants company along the way.</p>
+      <div class="tag-row">
+        <div class="pill warm">Goal-oriented</div>
+        <div class="pill">Still figuring some stuff out</div>
+        <div class="pill sand">Genuinely okay with that</div>
+      </div>
+    </div>
+
+    <!-- CARD 5 - FINAL -->
+    <div class="pcard final-card" data-index="4">
+      <div class="eyebrow">So</div>
+      <h2>That's me. What do you think?</h2>
+      <p>No pressure either way — I'd just rather know than wonder.</p>
+      <div class="choice-row">
+        <button class="choice-btn yes" onclick="respond('yes')">I'm interested 🤍</button>
+        <button class="choice-btn no" onclick="respond('no')">Not feeling it</button>
+      </div>
+      <div class="choice-note" id="response-note"></div>
+    </div>
+
+  </div>
+
+  <div class="nav-row" id="nav-row">
+    <button class="nav-btn prev" onclick="prevCard()">← Back</button>
+    <button class="nav-btn next" onclick="nextCard()">Next →</button>
+  </div>
+
+</div>
+
+<script>
+  const totalCards = 5;
+  let current = 0;
+  const CONNOR_PHONE = "3853338946";
+
+  function renderDots() {
+    const dotsEl = document.getElementById('dots');
+    dotsEl.innerHTML = '';
+    for (let i = 0; i < totalCards; i++) {
+      const d = document.createElement('div');
+      d.className = 'dot' + (i === current ? ' active' : '');
+      dotsEl.appendChild(d);
+    }
+  }
+
+  function showCard(i, animate = true) {
+    document.querySelectorAll('.pcard').forEach(c => {
+      c.classList.remove('visible', 'fresh');
+    });
+    const target = document.querySelector(`.pcard[data-index="${i}"]`);
+    target.classList.add('visible');
+    if (animate) target.classList.add('fresh');
+    current = i;
+    renderDots();
+    document.getElementById('nav-row').style.display = (i === totalCards - 1) ? 'none' : 'flex';
+    document.querySelector('.nav-btn.prev').style.visibility = (i === 0) ? 'hidden' : 'visible';
+    document.getElementById('swipe-hint').style.display = (i === totalCards - 1) ? 'none' : 'block';
+  }
+
+  function nextCard() { if (current < totalCards - 1) showCard(current + 1); }
+  function prevCard() { if (current > 0) showCard(current - 1); }
+
+  function respond(choice) {
+    const note = document.getElementById('response-note');
+    let body, displayMsg;
+    if (choice === 'yes') {
+      body = "Hey Connor, I'm interested! Let's talk more :)";
+      displayMsg = "Hit send below and Connor will know it's mutual.";
+    } else {
+      body = "Hey Connor, thanks for sharing this but I don't think we're a match.";
+      displayMsg = "Hit send below to let Connor know — no hard feelings either way.";
+    }
+    note.innerHTML = `<strong>${choice === 'yes' ? "Glad you're here 🤍" : "Appreciate you giving it an honest read"}</strong>${displayMsg}`;
+
+    // open pre-filled SMS to Connor's number
+    const smsUrl = `sms:${CONNOR_PHONE}?body=${encodeURIComponent(body)}`;
+    window.location.href = smsUrl;
+  }
+
+  // ===== SWIPE GESTURE HANDLING =====
+  let touchStartX = 0, touchStartY = 0, touchDeltaX = 0;
+  let isSwiping = false;
+  const stack = document.getElementById('stack');
+
+  stack.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    const activeCard = document.querySelector('.pcard.visible');
+    if (!activeCard) return;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    touchDeltaX = 0;
+    isSwiping = true;
+    activeCard.classList.add('swiping');
+    activeCard.classList.remove('settling');
+  }, { passive: true });
+
+  stack.addEventListener('touchmove', (e) => {
+    if (!isSwiping || e.touches.length !== 1) return;
+    const activeCard = document.querySelector('.pcard.visible');
+    if (!activeCard) return;
+    const dx = e.touches[0].clientX - touchStartX;
+    const dy = e.touches[0].clientY - touchStartY;
+    // only treat as horizontal swipe if motion is more horizontal than vertical
+    if (Math.abs(dx) > Math.abs(dy)) {
+      touchDeltaX = dx;
+      activeCard.style.transform = `translateX(${dx}px) rotate(${dx * 0.02}deg)`;
+      activeCard.style.opacity = Math.max(0.4, 1 - Math.abs(dx) / 400);
+    }
+  }, { passive: true });
+
+  stack.addEventListener('touchend', () => {
+    if (!isSwiping) return;
+    isSwiping = false;
+    const activeCard = document.querySelector('.pcard.visible');
+    if (!activeCard) return;
+    activeCard.classList.remove('swiping');
+    activeCard.classList.add('settling');
+
+    const threshold = 70;
+    if (touchDeltaX < -threshold && current < totalCards - 1) {
+      // swipe left -> next
+      activeCard.style.transform = 'translateX(-500px) rotate(-8deg)';
+      activeCard.style.opacity = '0';
+      setTimeout(() => { resetCardStyle(activeCard); showCard(current + 1); }, 220);
+    } else if (touchDeltaX > threshold && current > 0) {
+      // swipe right -> back
+      activeCard.style.transform = 'translateX(500px) rotate(8deg)';
+      activeCard.style.opacity = '0';
+      setTimeout(() => { resetCardStyle(activeCard); showCard(current - 1); }, 220);
+    } else {
+      // snap back to center, not enough movement
+      activeCard.style.transform = 'translateX(0) rotate(0deg)';
+      activeCard.style.opacity = '1';
+    }
+    touchDeltaX = 0;
+  });
+
+  function resetCardStyle(card) {
+    card.classList.remove('settling');
+    card.style.transform = '';
+    card.style.opacity = '';
+  }
+
+  renderDots();
+</script>
+</body>
+</html>
