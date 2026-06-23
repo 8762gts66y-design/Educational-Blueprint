@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Why — Connor's Anchor</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Space+Mono:wght@400;700&family=Barlow:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+
+  :root {
+    --bg: #0f0e0c;
+    --paper: #1a1814;
+    --ink: #f0ead8;
+    --ink-dim: #8a8070;
+    --gold: #d4a84b;
+    --gold-light: #f0c96a;
+    --red: #c94040;
+    --red-light: #e05555;
+    --green: #4a9e6b;
+    --green-light: #5dbf82;
+    --blue: #4a7ab5;
+    --blue-light: #6a9ed5;
+    --purple: #9b6bbf;
+    --purple-light: #b98fe0;
+    --border: #3a3428;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Barlow', sans-serif;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    position: fixed;
+  }
+
+  .app { position: relative; width: 100%; height: 100vh; }
+
+  /* ===== TOP BAR ===== */
+  .topbar {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 50;
+    padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+    background: linear-gradient(to bottom, rgba(15,14,12,0.95), rgba(15,14,12,0));
+    pointer-events: none;
+  }
+  .topbar * { pointer-events: auto; }
+  .title-label { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; }
+  .mode-switch {
+    display: flex; gap: 6px;
+  }
+  .mode-btn {
+    padding: 8px 12px; border: 1.5px solid var(--border); background: rgba(26,24,20,0.9);
+    color: var(--ink-dim); font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; border-radius: 3px;
+  }
+  .mode-btn.active { border-color: var(--gold); color: var(--gold-light); background: rgba(212,168,75,0.1); }
+
+  /* ===== VIEWS ===== */
+  .view { display: none; width: 100%; height: 100%; }
+  .view.visible { display: block; }
+
+  /* ===== SPIRAL VIEW ===== */
+  #view-spiral { overflow-y: auto; padding: 64px 18px 40px; }
+  .spiral-inner { max-width: 640px; margin: 0 auto; }
+
+  .breathe-box { text-align: center; padding: 26px 18px; border: 1px dashed var(--gold); background: rgba(212,168,75,0.04); margin-bottom: 18px; }
+  .breathe-box .big { font-family: 'Oswald', sans-serif; font-size: 20px; font-weight: 700; color: var(--gold-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .breathe-box p { font-size: 13px; color: var(--ink-dim); line-height: 1.6; }
+
+  .card { border: 1px solid var(--border); background: var(--paper); padding: 18px; margin-bottom: 12px; border-radius: 4px; }
+  .card-red { border-left: 3px solid var(--red); }
+  .card-blue { border-left: 3px solid var(--blue); }
+  .card-gold { border-left: 3px solid var(--gold); }
+  .card-green { border-left: 3px solid var(--green); }
+  .card-purple { border-left: 3px solid var(--purple); }
+  .card-title { font-family: 'Oswald', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .card p { font-size: 13.5px; line-height: 1.65; color: #c8bea8; }
+  .card p + p { margin-top: 8px; }
+  .list-item { font-size: 13.5px; color: #c8bea8; padding-left: 16px; position: relative; line-height: 1.6; margin-bottom: 7px; }
+  .list-item::before { content: '→'; position: absolute; left: 0; color: var(--gold); }
+
+  /* ===== MAP VIEW ===== */
+  #view-map { background: radial-gradient(ellipse at center, #1a1814 0%, #0f0e0c 70%); }
+  .map-hint {
+    position: absolute; bottom: 18px; left: 0; right: 0; text-align: center; z-index: 40;
+    font-family: 'Space Mono', monospace; font-size: 10px; color: var(--ink-dim); letter-spacing: 1px;
+    pointer-events: none; transition: opacity 0.4s;
+  }
+  .map-canvas-wrap { width: 100%; height: 100%; overflow: hidden; position: relative; touch-action: none; }
+  #map-canvas {
+    position: absolute; top: 0; left: 0;
+    transform-origin: 0 0;
+    width: 2400px; height: 2400px;
+  }
+  .connector-line { position: absolute; background: var(--border); height: 1.5px; transform-origin: left center; z-index: 1; }
+  .connector-line.lit { background: var(--gold); opacity: 0.5; }
+
+  .node {
+    position: absolute; transform: translate(-50%, -50%); z-index: 5;
+    display: flex; flex-direction: column; align-items: center; cursor: pointer;
+    transition: opacity 0.3s;
+  }
+  .node-dot {
+    width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--gold);
+    background: var(--bg); display: flex; align-items: center; justify-content: center;
+    font-size: 11px; transition: all 0.25s; box-shadow: 0 0 0 0 rgba(212,168,75,0.4);
+  }
+  .node-center .node-dot { width: 30px; height: 30px; background: var(--gold); font-size: 16px; box-shadow: 0 0 24px rgba(212,168,75,0.5); }
+  .node-label {
+    margin-top: 6px; font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-dim); text-align: center;
+    white-space: nowrap; transition: color 0.2s;
+  }
+  .node-center .node-label { color: var(--gold-light); font-size: 13px; }
+  .node:hover .node-dot, .node.open .node-dot { border-color: var(--gold-light); box-shadow: 0 0 16px rgba(212,168,75,0.4); }
+  .node:hover .node-label, .node.open .node-label { color: var(--ink); }
+
+  .node-card {
+    position: absolute; width: 230px; left: 50%; top: 100%; transform: translateX(-50%);
+    margin-top: 10px; background: var(--paper); border: 1px solid var(--gold); border-radius: 5px;
+    padding: 13px 14px; font-size: 11.5px; line-height: 1.55; color: #c8bea8;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 20;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  }
+  .node-card.revealed { opacity: 1; pointer-events: auto; }
+  .node-card .quote-line { font-style: italic; color: var(--gold-light); border-left: 2px solid var(--gold); padding-left: 9px; margin-bottom: 7px; display: block; font-size: 11px; }
+
+  .zoom-controls {
+    position: absolute; bottom: 60px; right: 16px; z-index: 40;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .zoom-btn {
+    width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--gold);
+    background: rgba(26,24,20,0.92); color: var(--gold-light); font-size: 18px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .reset-btn {
+    position: absolute; bottom: 16px; right: 16px; z-index: 40;
+    font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--ink-dim); background: rgba(26,24,20,0.9); border: 1px solid var(--border);
+    padding: 6px 10px; border-radius: 3px; cursor: pointer; display: none;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="title-label">The Why</div>
+    <div class="mode-switch">
+      <button class="mode-btn active" id="btn-spiral" onclick="showView('spiral')">🌀 2AM Spiral</button>
+      <button class="mode-btn" id="btn-map" onclick="showView('map')">🌫️ Why Am I Doing This</button>
+    </div>
+  </div>
+
+  <!-- ============ SPIRAL VIEW ============ -->
+  <div class="view visible" id="view-spiral">
+    <div class="spiral-inner">
+
+      <div class="breathe-box">
+        <div class="big">Stop. Breathe. Read This.</div>
+        <p>Whatever just happened — a bad grade, a rough night, ADHD chaos, a panic spike — it is not the whole story. It's one data point. You are not your worst moment right now.</p>
+      </div>
+
+      <div class="card card-red">
+        <div class="card-title">🛑 The Thing That's True Right Now</div>
+        <p>This feeling is real, but it is not permanent and it is not accurate information about your worth or your future. Your nervous system is doing a thing. That's it. That's all this is.</p>
+      </div>
+
+      <div class="card card-gold">
+        <div class="card-title">🧠 Remember The Equation</div>
+        <p>You built this yourself: <strong>Comfort + consistency + acknowledgment = safety.</strong> You can give yourself this right now. You don't need to wait for someone else to provide it.</p>
+        <p>Name what's actually happening ("I'm spiraling, this is a nervous system response, not truth"). Find one consistent thing — your breath, your dog, your routine. That's enough for tonight.</p>
+      </div>
+
+      <div class="card card-green">
+        <div class="card-title">📍 Proof This Isn't Forever</div>
+        <p>Look back at literally any stretch of weeks behind you. There has always been a moment that felt like this — convinced you'd bomb something, convinced you weren't capable, certain this time was different. Every single time, you were wrong about that. You kept moving, and the evidence kept building. This moment is not an exception to that pattern. It's the same pattern, just from inside it instead of looking back at it.</p>
+      </div>
+
+      <div class="card card-blue">
+        <div class="card-title">🐾 The Floor Beneath You</div>
+        <p>Appa is still there. Therapy is still on the calendar. Your parents are still in the next room, and they chose to help you instead of watch you struggle alone. None of that disappeared because tonight is hard.</p>
+      </div>
+
+      <div class="card card-purple">
+        <div class="card-title">🌙 What To Actually Do Right Now</div>
+        <div class="list-item">Put this down. Don't try to solve anything tonight.</div>
+        <div class="list-item">Sit with Appa, or step outside for two minutes.</div>
+        <div class="list-item">If it's bad enough that you need to talk to someone — therapist, parent, anyone — do that instead of pushing through alone.</div>
+        <div class="list-item">Tomorrow exists. It always has. This will look different in the morning.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ MAP VIEW ============ -->
+  <div class="view" id="view-map">
+    <div class="map-canvas-wrap" id="map-wrap">
+      <div id="map-canvas"></div>
+    </div>
+    <div class="map-hint" id="map-hint">Pinch or scroll to zoom · Drag to pan · Tap a point</div>
+    <div class="zoom-controls">
+      <div class="zoom-btn" onclick="zoomStep(1)">+</div>
+      <div class="zoom-btn" onclick="zoomStep(-1)">−</div>
+    </div>
+    <div class="reset-btn" id="reset-btn" onclick="resetMap()">Recenter</div>
+  </div>
+
+</div>
+
+<script>
+  // ===================== VIEW SWITCH =====================
+  function showView(mode) {
+    document.getElementById('view-spiral').classList.remove('visible');
+    document.getElementById('view-map').classList.remove('visible');
+    document.getElementById('view-' + mode).classList.add('visible');
+    document.getElementById('btn-spiral').classList.remove('active');
+    document.getElementById('btn-map').classList.remove('active');
+    document.getElementById('btn-' + mode).classList.add('active');
+    if (mode === 'map') setTimeout(initMapIfNeeded, 50);
+  }
+
+  // ===================== MAP DATA =====================
+  // Center is the canvas-space origin (1200,1200 = center of 2400x2400 canvas)
+  const CX = 1200, CY = 1200;
+
+  const nodes = [
+    { id: 'center', x: CX, y: CY, label: "Why I'm Doing This", icon: '★', type: 'center', card: null },
+
+    // Ring 1 - main branches
+    { id: 'teens', x: CX - 420, y: CY - 160, label: 'Why Teens', icon: '🎯', type: 'main',
+      card: `<span class="quote-line">"What I needed at that age was a mentor who really understood. I want to be that person."</span>You're not chasing a career. You're closing a loop — becoming, on purpose, the person 13-18 year old you needed.` },
+
+    { id: 'mentors', x: CX + 380, y: CY - 240, label: 'The Mentors Coming', icon: '🧑‍🏫', type: 'main',
+      card: `UVU's CMHC faculty are practitioners, not just researchers. The people teaching your psych classes are the same people who run the Master's program you're aiming for. Show up, ask questions — that's the whole mechanism.` },
+
+    { id: 'community', x: CX + 360, y: CY + 260, label: 'Community Already Works', icon: '💃', type: 'main',
+      card: `Country swing gave you a room where you practice being fully yourself without flinching. College has its own version of that waiting. You already know what it feels like — you're allowed to expect it again.` },
+
+    { id: 'evidence', x: CX - 460, y: CY + 220, label: 'The Evidence', icon: '📊', type: 'main',
+      card: `Every time doubt shows up loud, it conveniently forgets what you've already built. This node remembers for you.` },
+
+    { id: 'accident', x: CX, y: CY + 420, label: 'The Accident', icon: '💥', type: 'main',
+      card: `You spent months knowing you wanted out of construction and stayed out of fear of disappointing people. The accident made the decision for you. Not a tragedy — the moment your life started pointing somewhere real.` },
+
+    { id: 'belong', x: CX, y: CY - 440, label: "Do I Belong Here", icon: '🪞', type: 'main',
+      card: `The 80-year-old-you test: would he be glad you tried, even if it was hard? You already know the answer. Doubt isn't wisdom — it's an old fear pattern wearing a smart voice.` },
+
+    // Ring 2 - detail nodes, connected to ring 1 parents
+    { id: 'ged-proof', x: CX - 680, y: CY + 380, label: 'GED · 680 Total', icon: '📝', type: 'detail', parent: 'evidence',
+      card: `Completed in under a month. Honors range in 3 of 4 subjects. Science scored in the 93rd percentile nationally.` },
+
+    { id: 'admit-proof', x: CX - 560, y: CY + 480, label: 'UVU Admitted', icon: '🎓', type: 'detail', parent: 'evidence',
+      card: `Psychology BS, Fall 2026. Not provisional. Admitted. The application that felt impossible is already done.` },
+
+    { id: 'fafsa-proof', x: CX - 320, y: CY + 480, label: 'FAFSA + Email Live', icon: '✅', type: 'detail', parent: 'evidence',
+      card: `Application submitted, financial aid in motion, official UVU student email active. The machinery is already running.` },
+
+    { id: 'pivot', x: CX + 280, y: CY + 480, label: 'The Pivot Already Happened', icon: '🔁', type: 'detail', parent: 'accident',
+      card: `The hardest transition of your life — construction to therapist-in-training — already occurred. Everything from here is execution, not a leap.` },
+
+    { id: 'equation', x: CX - 700, y: CY - 100, label: 'Comfort + Consistency + Acknowledgment', icon: '🧠', type: 'detail', parent: 'teens',
+      card: `The equation you built yourself for what creates safety. It works on clients someday. It works on you right now too.` },
+
+    { id: 'faculty', x: CX + 620, y: CY - 360, label: 'Same Faculty, Whole Pipeline', icon: '🔗', type: 'detail', parent: 'mentors',
+      card: `Your undergrad professors and your future CMHC Master's faculty aren't separate people in a separate building. It's one continuous relationship if you let it be.` },
+
+    { id: 'sarah', x: CX + 560, y: CY + 360, label: 'People Who Get It', icon: '🤝', type: 'detail', parent: 'community',
+      card: `Sarah saw you fully at dancing already. That's proof the room exists. College just has more rooms like it.` },
+
+    { id: 'fear-voice', x: CX - 130, y: CY - 580, label: 'The Fear Talks Smart', icon: '🗣️', type: 'detail', parent: 'belong',
+      card: `Doubt rarely sounds like fear. It sounds like reasonable caution. That disguise is exactly how it gets past you. Notice the disguise.` },
+  ];
+
+  function buildMap() {
+    const canvas = document.getElementById('map-canvas');
+    canvas.innerHTML = '';
+
+    // draw connector lines first (so they sit beneath nodes)
+    nodes.forEach(n => {
+      if (n.parent) {
+        const parent = nodes.find(p => p.id === n.parent);
+        drawLine(canvas, parent.x, parent.y, n.x, n.y);
+      } else if (n.id !== 'center') {
+        drawLine(canvas, CX, CY, n.x, n.y);
+      }
+    });
+
+    // draw nodes
+    nodes.forEach(n => {
+      const el = document.createElement('div');
+      el.className = 'node' + (n.type === 'center' ? ' node-center' : '');
+      el.style.left = n.x + 'px';
+      el.style.top = n.y + 'px';
+      el.id = 'node-' + n.id;
+      el.innerHTML = `
+        <div class="node-dot">${n.icon}</div>
+        <div class="node-label">${n.label}</div>
+        ${n.card ? `<div class="node-card" id="card-${n.id}">${n.card}</div>` : ''}
+      `;
+      if (n.card) {
+        // card visibility is now driven automatically by zoom scale, not click
+      }
+      canvas.appendChild(el);
+    });
+  }
+
+  function drawLine(canvas, x1, y1, x2, y2) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const length = Math.sqrt(dx*dx + dy*dy);
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    const line = document.createElement('div');
+    line.className = 'connector-line';
+    line.style.width = length + 'px';
+    line.style.left = x1 + 'px';
+    line.style.top = y1 + 'px';
+    line.style.transform = `rotate(${angle}deg)`;
+    canvas.appendChild(line);
+  }
+
+  let openCardId = null;
+  // Cards now reveal automatically based on zoom level + node type, see updateCardVisibility()
+  function updateCardVisibility() {
+    // detail nodes reveal once zoomed in past a threshold; main/center nodes' cards reveal a bit earlier
+    nodes.forEach(n => {
+      if (!n.card) return;
+      const card = document.getElementById('card-' + n.id);
+      const node = document.getElementById('node-' + n.id);
+      if (!card) return;
+      let threshold = 1.0; // default for detail nodes - needs more zoom
+      if (n.type === 'main') threshold = 0.62;
+      if (n.type === 'center') threshold = 0.0;
+      const shouldShow = scale >= threshold;
+      card.classList.toggle('revealed', shouldShow);
+      node.classList.toggle('open', shouldShow);
+    });
+  }
+
+  // ===================== PAN / ZOOM ENGINE =====================
+  let scale = 0.42, panX = 0, panY = 0;
+  let mapInitialized = false;
+
+  function applyTransform() {
+    const canvas = document.getElementById('map-canvas');
+    canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+    const wrap0 = document.getElementById('map-wrap');
+    const rect0 = wrap0.getBoundingClientRect();
+    const defaultPanX = rect0.width / 2 - CX * 0.42;
+    const defaultPanY = rect0.height / 2 - CY * 0.42;
+    const isDefault = Math.abs(scale - 0.42) < 0.01 && Math.abs(panX - defaultPanX) < 2 && Math.abs(panY - defaultPanY) < 2;
+    document.getElementById('reset-btn').style.display = isDefault ? 'none' : 'block';
+    document.getElementById('map-hint').style.opacity = (scale > 0.55) ? '0' : '1';
+    // counter-scale cards so their text stays a consistent readable size on screen
+    // regardless of how zoomed-in the canvas is
+    const counterScale = Math.min(1.6, Math.max(0.7, 1 / scale * 0.55));
+    document.querySelectorAll('.node-card').forEach(c => {
+      c.style.transform = `translateX(-50%) scale(${counterScale})`;
+      c.style.transformOrigin = 'top center';
+    });
+    updateCardVisibility();
+  }
+
+  // zoom anchored at a specific screen-space point (cx, cy relative to viewport)
+  function zoomAt(newScaleRaw, cx, cy) {
+    const newScale = Math.min(2.4, Math.max(0.2, newScaleRaw));
+    const wrap = document.getElementById('map-wrap');
+    const rect = wrap.getBoundingClientRect();
+    // point in viewport coords relative to wrap
+    const px = cx - rect.left;
+    const py = cy - rect.top;
+    // canvas-space point under the cursor/finger before zoom change
+    const canvasX = (px - panX) / scale;
+    const canvasY = (py - panY) / scale;
+    // after changing scale, keep that same canvas-space point under the cursor/finger
+    panX = px - canvasX * newScale;
+    panY = py - canvasY * newScale;
+    scale = newScale;
+    applyTransform();
+  }
+
+  function zoomStep(dir) {
+    const wrap = document.getElementById('map-wrap');
+    const rect = wrap.getBoundingClientRect();
+    // zoom centered on the middle of the viewport for button taps
+    zoomAt(scale + dir * 0.18, rect.left + rect.width/2, rect.top + rect.height/2);
+  }
+
+  function resetMap() {
+    scale = 0.42;
+    const wrap = document.getElementById('map-wrap');
+    const rect = wrap.getBoundingClientRect();
+    panX = rect.width / 2 - CX * scale;
+    panY = rect.height / 2 - CY * scale;
+    applyTransform();
+  }
+
+  function initMapIfNeeded() {
+    if (mapInitialized) return;
+    mapInitialized = true;
+    buildMap();
+
+    // center the map so the center node (CX,CY in canvas space) lands at the middle of the viewport
+    const wrap = document.getElementById('map-wrap');
+    const rect = wrap.getBoundingClientRect();
+    panX = rect.width / 2 - CX * scale;
+    panY = rect.height / 2 - CY * scale;
+    applyTransform();
+
+    // mouse wheel zoom, anchored at cursor position
+    wrap.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const dir = e.deltaY < 0 ? 1 : -1;
+      zoomAt(scale + dir * 0.08, e.clientX, e.clientY);
+    }, { passive: false });
+
+    // drag to pan (mouse)
+    let isDragging = false, lastX = 0, lastY = 0;
+    wrap.addEventListener('mousedown', (e) => {
+      isDragging = true; lastX = e.clientX; lastY = e.clientY;
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      panX += (e.clientX - lastX); panY += (e.clientY - lastY);
+      lastX = e.clientX; lastY = e.clientY;
+      applyTransform();
+    });
+    window.addEventListener('mouseup', () => { isDragging = false; });
+
+    // touch: pan + pinch zoom, anchored at pinch midpoint
+    let touchLastX = 0, touchLastY = 0;
+    let isPinching = false;
+    let pinchStartDist = 0, pinchStartScale = 1;
+    let pinchMidX = 0, pinchMidY = 0;
+
+    wrap.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        touchLastX = e.touches[0].clientX;
+        touchLastY = e.touches[0].clientY;
+        isPinching = false;
+      } else if (e.touches.length === 2) {
+        isPinching = true;
+        pinchStartDist = getTouchDist(e.touches);
+        pinchStartScale = scale;
+      }
+    }, { passive: true });
+
+    wrap.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (e.touches.length === 1 && !isPinching) {
+        const dx = e.touches[0].clientX - touchLastX;
+        const dy = e.touches[0].clientY - touchLastY;
+        panX += dx; panY += dy;
+        touchLastX = e.touches[0].clientX;
+        touchLastY = e.touches[0].clientY;
+        applyTransform();
+      } else if (e.touches.length === 2) {
+        const dist = getTouchDist(e.touches);
+        pinchMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        pinchMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        const newScale = pinchStartScale * (dist / pinchStartDist);
+        zoomAt(newScale, pinchMidX, pinchMidY);
+      }
+    }, { passive: false });
+
+    function getTouchDist(touches) {
+      const dx = touches[0].clientX - touches[1].clientX;
+      const dy = touches[0].clientY - touches[1].clientY;
+      return Math.sqrt(dx*dx + dy*dy);
+    }
+  }
+</script>
+</body>
+</html>
