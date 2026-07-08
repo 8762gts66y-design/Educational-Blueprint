@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wake Ramp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#13161d;
+    --panel:#1b1f28;
+    --panel-2:#212633;
+    --line:#2d3441;
+    --text:#e6e9ef;
+    --dim:#848d9d;
+    --dimmer:#5c6473;
+    --sun:#f2a93b;
+    --sun-soft:rgba(242,169,59,.12);
+    --done:#4fa88b;
+    --alert:#d96b52;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--night);
+    color:var(--text);
+    font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:15px;
+    line-height:1.5;
+    padding:20px 16px 64px;
+    max-width:620px;
+    margin:0 auto;
+  }
+  h1,h2,h3{font-family:'Space Grotesk','Helvetica Neue',sans-serif;font-weight:700;letter-spacing:-.01em}
+
+  .eyebrow{
+    font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--dimmer);font-weight:500;
+  }
+
+  /* ---------- HERO READOUT ---------- */
+  .readout{
+    border:1px solid var(--line);
+    border-radius:4px;
+    background:
+      radial-gradient(120% 100% at 50% 0%, var(--sun-soft), transparent 62%),
+      var(--panel);
+    padding:22px 20px 18px;
+    text-align:center;
+  }
+  .readout .eyebrow{margin-bottom:10px}
+  .clock{
+    font-size:clamp(56px,17vw,84px);
+    font-weight:700;
+    line-height:.92;
+    color:var(--sun);
+    letter-spacing:-.03em;
+    font-variant-numeric:tabular-nums;
+  }
+  .clock .mer{font-size:.3em;letter-spacing:.08em;color:var(--dim);margin-left:.35em;vertical-align:.55em}
+  .sub{margin-top:12px;font-size:12px;color:var(--dim)}
+
+  .bar{display:flex;gap:3px;margin-top:16px}
+  .tick{flex:1;height:3px;background:var(--line);border-radius:2px}
+  .tick.on{background:var(--sun)}
+  .tick.now{background:var(--sun);box-shadow:0 0 0 1px var(--sun)}
+
+  .counter{
+    margin-top:16px;padding-top:14px;border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;font-size:11px;color:var(--dimmer);
+    letter-spacing:.04em;text-transform:uppercase;
+  }
+  .counter b{color:var(--text);font-weight:500}
+
+  /* ---------- TONIGHT BANNER ---------- */
+  .tonight{
+    margin-top:10px;border:1px solid var(--sun);border-radius:4px;
+    background:var(--sun-soft);padding:12px 14px;
+    font-size:13px;display:none;
+  }
+  .tonight.show{display:block}
+  .tonight strong{color:var(--sun)}
+
+  /* ---------- SECTIONS ---------- */
+  section{margin-top:34px}
+  section > .eyebrow{margin-bottom:12px}
+
+  /* ---------- SEQUENCE ---------- */
+  .step{
+    display:flex;gap:14px;align-items:flex-start;
+    padding:13px 0;border-top:1px solid var(--line);
+    cursor:pointer;-webkit-tap-highlight-color:transparent;
+  }
+  .step:last-child{border-bottom:1px solid var(--line)}
+  .box{
+    flex:0 0 18px;height:18px;margin-top:2px;
+    border:1px solid var(--dimmer);border-radius:2px;
+    position:relative;transition:border-color .15s,background .15s;
+  }
+  .box::after{
+    content:"";position:absolute;inset:3px;border-radius:1px;
+    background:var(--done);transform:scale(0);transition:transform .15s ease;
+  }
+  .step.done .box{border-color:var(--done)}
+  .step.done .box::after{transform:scale(1)}
+  .t{
+    flex:0 0 62px;color:var(--sun);font-weight:500;font-size:14px;
+    font-variant-numeric:tabular-nums;transition:color .15s;
+  }
+  .step.done .t{color:var(--dimmer)}
+  .body{flex:1;min-width:0}
+  .body .lead{
+    font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:15px;
+    transition:color .15s;
+  }
+  .step.done .body .lead{color:var(--dimmer);text-decoration:line-through;text-decoration-color:var(--dimmer)}
+  .body .note{font-size:12px;color:var(--dim);margin-top:3px}
+  .step.done .body .note{color:var(--dimmer)}
+
+  /* ---------- BLOCK CARD ---------- */
+  .block{
+    border:1px solid var(--line);border-left:2px solid var(--sun);
+    border-radius:3px;background:var(--panel);padding:16px;
+  }
+  .block .phase{font-size:11px;color:var(--dimmer);letter-spacing:.1em;text-transform:uppercase}
+  .block h3{font-size:19px;margin:6px 0 2px}
+  .block .len{color:var(--sun);font-size:13px;font-weight:500}
+  .block ul{list-style:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+  .block li{font-size:13px;color:var(--dim);padding:4px 0 4px 16px;position:relative}
+  .block li::before{content:"";position:absolute;left:0;top:12px;width:6px;height:1px;background:var(--dimmer)}
+  .block li b{color:var(--text);font-weight:500}
+  .prompt{
+    margin-top:12px;padding:10px 12px;background:var(--panel-2);border-radius:3px;
+    font-size:12px;color:var(--dim);font-style:italic;line-height:1.55;
+  }
+
+  /* ---------- RULES ---------- */
+  .rules{counter-reset:r}
+  .rule{
+    display:flex;gap:14px;padding:11px 0;border-top:1px solid var(--line);font-size:13.5px;
+  }
+  .rule:last-child{border-bottom:1px solid var(--line)}
+  .rule::before{
+    counter-increment:r;content:counter(r,decimal-leading-zero);
+    color:var(--dimmer);font-size:11px;flex:0 0 20px;padding-top:3px;
+  }
+
+  /* ---------- FAILURE ---------- */
+  .fail{border:1px solid var(--line);border-left:2px solid var(--alert);border-radius:3px;background:var(--panel);padding:16px}
+  .fail .def{font-size:13px;color:var(--dim);padding-bottom:14px;margin-bottom:6px;border-bottom:1px solid var(--line)}
+  .fail .def b{color:var(--text);font-weight:500}
+  .fr{display:flex;gap:12px;padding:9px 0;font-size:13px;align-items:baseline}
+  .fr .n{flex:0 0 54px;color:var(--alert);font-weight:500;font-size:12px}
+  .fr span{color:var(--dim)}
+  .fr span b{color:var(--text);font-weight:500}
+  .forbidden{
+    margin-top:14px;padding-top:14px;border-top:1px solid var(--line);
+    font-size:13px;color:var(--dim);
+  }
+  .forbidden b{color:var(--alert);font-weight:500;letter-spacing:.02em}
+
+  /* ---------- RAMP TABLE ---------- */
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  td{padding:9px 0;border-top:1px solid var(--line);color:var(--dim);font-variant-numeric:tabular-nums}
+  td:last-child{text-align:right;color:var(--text)}
+  tr.past td{color:var(--dimmer)}
+  tr.past td:last-child{color:var(--dimmer)}
+  tr.cur td{color:var(--sun)!important;font-weight:500}
+  tr.cur td:first-child::before{content:"▸ ";}
+  tr:last-child td{border-bottom:1px solid var(--line)}
+
+  footer{margin-top:36px;text-align:center;font-size:11px;color:var(--dimmer);letter-spacing:.06em}
+
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  :focus-visible{outline:2px solid var(--sun);outline-offset:3px}
+</style>
+</head>
+<body>
+
+<div class="readout">
+  <div class="eyebrow">Today's alarm</div>
+  <div class="clock" id="clock">—</div>
+  <div class="sub" id="stepLabel">—</div>
+  <div class="bar" id="bar"></div>
+  <div class="counter">
+    <span id="dateLabel">—</span>
+    <span><b id="daysLeft">—</b> days to Aug 19</span>
+  </div>
+</div>
+
+<div class="tonight" id="tonight"></div>
+
+<section>
+  <div class="eyebrow">Morning sequence · same every day</div>
+  <div id="seq"></div>
+</section>
+
+<section>
+  <div class="eyebrow">The block · 9:00</div>
+  <div class="block">
+    <div class="phase" id="bPhase">—</div>
+    <h3 id="bTitle">—</h3>
+    <div class="len" id="bLen">—</div>
+    <ul id="bList"></ul>
+    <div class="prompt">What did he claim · do I believe him · where does it show up in my life</div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Fixed rules</div>
+  <div class="rules">
+    <div class="rule">Wake time never moves. Bedtime floats.</div>
+    <div class="rule">Phone charges across the room. Never in bed.</div>
+    <div class="rule">R6 off 45 minutes before bed.</div>
+    <div class="rule">Dance nights: go. Get up the same time anyway. One tired day is free.</div>
+    <div class="rule">No Ritalin after 5:30 PM. Ever.</div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">If you miss</div>
+  <div class="fail">
+    <div class="def">A miss is <b>still horizontal 15 minutes after the alarm.</b> Nothing else counts. Skip the journal, skip the block — if your feet hit the floor, you made it.</div>
+    <div class="fr"><span class="n">1 miss</span><span>Nothing happens. Same target tomorrow. <b>No commentary.</b></span></div>
+    <div class="fr"><span class="n">2 in a row</span><span>Ramp is too fast. <b>Hold this step 4 extra days.</b> Don't advance.</span></div>
+    <div class="fr"><span class="n">3+</span><span>Something else is broken — bedtime, meds, screens. <b>Diagnose, don't discipline.</b></span></div>
+    <div class="forbidden"><b>THE ONLY FORBIDDEN MOVE:</b> the catch-up. 11:45 instead of 11:30 is a rounding error. Sleeping to 2 PM undoes four days.</div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Wake ramp · change the alarm the night before</div>
+  <table><tbody id="ramp"></tbody></table>
+</section>
+
+<footer>SCHOOL STARTS AUG 19 · 9:00 AM</footer>
+
+<script>
+const RAMP = [
+  {d:'2026-07-08', w:'11:30'},
+  {d:'2026-07-13', w:'11:00'},
+  {d:'2026-07-17', w:'10:30'},
+  {d:'2026-07-22', w:'10:00'},
+  {d:'2026-07-26', w:'9:30'},
+  {d:'2026-07-31', w:'9:00'},
+  {d:'2026-08-04', w:'8:30'},
+  {d:'2026-08-09', w:'8:00'},
+  {d:'2026-08-13', w:'7:30', hold:true},
+];
+const SCHOOL = '2026-08-19';
+
+const PHASES = [
+  {from:'2026-07-08', to:'2026-07-21', phase:'Weeks 1–2', title:'Read only.', len:'30 minutes · 9:00 – 9:30',
+   items:['Read <b>The Body Keeps the Score</b>. Desk, not bed.','Finish the chapter early? <b>Sit until 9:30.</b> The clock is the rep, not the chapter.','Phone-free until the block ends.']},
+  {from:'2026-07-22', to:'2026-08-04', phase:'Weeks 3–4', title:'Read, then write.', len:'60 minutes · 9:00 – 10:00',
+   items:['Read 40 min · short break · write 15 min.','One handwritten page.','Phone-free from the <b>8:40 buffer</b> onward.']},
+  {from:'2026-08-05', to:'2026-08-18', phase:'Weeks 5–6', title:'Full split. The real thing.', len:'110 minutes · 9:00 – 10:50',
+   items:['Read 9:00 – 9:50.','<b>Break 9:50 – 10:00.</b> The break is the rep.','Write 10:00 – 10:50.','Phone-free until 10:50.']},
+];
+
+const STEPS = [
+  {o:0,  lead:'Feet on the floor.',      note:'Sit up on the edge of the bed. Phone stays across the room.'},
+  {o:5,  lead:'Outside with Appa.',      note:'No phone. 10 min sun · 20 min overcast. Through a window doesn\u2019t count.'},
+  {o:25, lead:'Shower. Eat.',            note:'Take the long shower now. It compresses in August.'},
+  {o:65, lead:'Journal. 5 minutes.',     note:'Three lines. What time did I really get up · how do I feel · what\u2019s in the way.'},
+  {o:70, lead:'Buffer.',                 note:'Do nothing. Don\u2019t fill it. This is the rep.'},
+  {o:90, lead:'The block.',              note:'Sit down. Stay there.'},
+];
+
+const iso = dt => dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+const parse = s => {const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d);};
+const today = (()=>{const n=new Date(); return new Date(n.getFullYear(),n.getMonth(),n.getDate());})();
+const tISO = iso(today);
+const days = (a,b) => Math.round((parse(b)-parse(a))/864e5);
+
+// current ramp step
+let idx = 0;
+for (let i=0;i<RAMP.length;i++) if (tISO >= RAMP[i].d) idx = i;
+if (tISO < RAMP[0].d) idx = 0;
+const cur = RAMP[idx];
+const postSchool = tISO >= SCHOOL;
+
+// hero
+const [wh,wm] = cur.w.split(':').map(Number);
+document.getElementById('clock').innerHTML = cur.w + '<span class="mer">AM</span>';
+document.getElementById('stepLabel').textContent =
+  postSchool ? 'School schedule. The ramp is over.'
+  : cur.hold ? 'Step 9 of 9 · HOLD. Nothing changes now.'
+  : 'Step ' + (idx+1) + ' of 9';
+document.getElementById('dateLabel').textContent =
+  today.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+const dl = days(tISO, SCHOOL);
+document.getElementById('daysLeft').textContent = dl > 0 ? dl : 0;
+
+const bar = document.getElementById('bar');
+RAMP.forEach((_,i)=>{
+  const t = document.createElement('div');
+  t.className = 'tick' + (i < idx ? ' on' : i === idx ? ' now' : '');
+  bar.appendChild(t);
+});
+
+// tonight banner
+const next = RAMP[idx+1];
+if (next && days(tISO, next.d) === 1){
+  const el = document.getElementById('tonight');
+  el.innerHTML = 'Tonight before bed: <strong>&ldquo;Alexa, set my alarm for ' + next.w + ' AM.&rdquo;</strong>';
+  el.classList.add('show');
+}
+
+// sequence — times derived from today's wake target
+const fmt = mins => {
+  let h = Math.floor(mins/60) % 24, m = mins % 60;
+  const mer = h < 12 ? 'AM' : 'PM';
+  let hh = h % 12; if (hh === 0) hh = 12;
+  return hh + ':' + String(m).padStart(2,'0');
+};
+const base = wh*60 + wm;
+const seq = document.getElementById('seq');
+STEPS.forEach(s=>{
+  const div = document.createElement('div');
+  div.className = 'step';
+  div.tabIndex = 0;
+  div.setAttribute('role','checkbox');
+  div.setAttribute('aria-checked','false');
+  div.innerHTML = '<div class="box"></div><div class="t">'+fmt(base+s.o)+'</div>' +
+                  '<div class="body"><div class="lead">'+s.lead+'</div><div class="note">'+s.note+'</div></div>';
+  const toggle = () => {
+    div.classList.toggle('done');
+    div.setAttribute('aria-checked', div.classList.contains('done'));
+  };
+  div.addEventListener('click', toggle);
+  div.addEventListener('keydown', e => { if (e.key===' '||e.key==='Enter'){ e.preventDefault(); toggle(); }});
+  seq.appendChild(div);
+});
+
+// block phase
+let ph = PHASES[0];
+PHASES.forEach(p => { if (tISO >= p.from) ph = p; });
+document.getElementById('bPhase').textContent = ph.phase;
+document.getElementById('bTitle').textContent = ph.title;
+document.getElementById('bLen').textContent = ph.len;
+document.getElementById('bList').innerHTML = ph.items.map(i=>'<li>'+i+'</li>').join('');
+
+// ramp table
+const tb = document.getElementById('ramp');
+RAMP.forEach((r,i)=>{
+  const tr = document.createElement('tr');
+  tr.className = i < idx ? 'past' : i === idx ? 'cur' : '';
+  const dt = parse(r.d).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+  tr.innerHTML = '<td>'+dt+(r.hold?' · hold':'')+'</td><td>'+r.w+' AM</td>';
+  tb.appendChild(tr);
+});
+</script>
+</body>
+</html>
